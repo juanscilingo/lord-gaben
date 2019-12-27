@@ -64,9 +64,9 @@ export const getMatchOverview = async matchId => {
 
 // CONSTANTS
 export const SKILL = {
-  0: 'Normal skill',
-  1: 'High skill',
-  2: 'Very high skill'
+  1: 'Normal skill',
+  2: 'High skill',
+  3: 'Very high skill'
 }
 
 export const LOBBY_TYPE = {
