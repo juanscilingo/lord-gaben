@@ -1,6 +1,13 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+console.log('NODE_ENV: ', process.env.NODE_ENV)
+
+if (process.env.NODE_ENV === 'development')
+  dotenv.config();
+else {
+  const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
+  dotenv.config({ path: envFile });
+}
 
 export default {
   DISCORD_TOKEN: process.env.DISCORD_TOKEN,

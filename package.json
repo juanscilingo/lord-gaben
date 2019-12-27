@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "backpack",
-    "build": "backpack build"
+    "start:production": "backpack build && node ./build/main.js",
+    "deploy": "eb deploy"
   },
   "keywords": [],
   "author": "",
