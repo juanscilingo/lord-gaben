@@ -2,29 +2,29 @@ import env from '../env';
 import * as openDota from '../services/open-dota';
 import moment from 'moment';
 
+const parsedMatches = [];
+
 const handler = async () => {
   console.log('Looking for new dota matches...')
 
-  const fromDate = moment.utc().subtract(30, 'minutes');
-  let newMatches = [];
+  const fromDate = moment.utc().subtract(180, 'minutes');
 
   for (const player of env.DOTA_PLAYERS) {
-    const playerMatches = await openDota.recentMatches(player);
-    newMatches = newMatches.concat(playerMatches.filter(m =>
-      !newMatches.includes(newMatch => newMatch.match_id === m.match_id) &&
-      moment.utc((m.start_time + m.duration) * 1000) > fromDate
-    ))
-  }
-
-  console.log(`Found ${newMatches.length} matches: ${newMatches.map(m => m.match_id).join(', ')}`);
-
-  for (const match of newMatches) {
-    const matchOverview = await openDota.getMatchOverview(match.match_id);
-    global.client.channels.get(env.MATCHES_CHANNEL_ID).send(matchOverview);
+    for (const match of await openDota.getRecentMatches(player)) {
+      if (!parsedMatches.includes(match.match_id)) {
+        const endDate = moment.utc((match.start_time + match.duration) * 1000);
+        if (endDate > fromDate) {
+          console.log('Parsing match: ', match.match_id)
+          const overview = await openDota.getMatchOverview(match.match_id);
+          global.client.channels.get(env.MATCHES_CHANNEL_ID).send(overview);
+          parsedMatches.push(match.match_id);
+        }
+      }
+    }
   }
 }
 
 export default {
-  interval: 1000 * 60 * 5,
+  interval: 1000 * 60,
   handler
 }

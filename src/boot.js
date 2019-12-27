@@ -17,7 +17,7 @@ export default () => {
     const issuedCommand = args.shift().toLowerCase();
 
     try {
-      commands.filter(command => command.matchers.some(matcher => matcher.match(issuedCommand))).forEach(command => command.handler(message, args));
+      commands.filter(command => command.matchers.some(matcher => matcher === issuedCommand)).forEach(command => command.handler(message, args));
     } catch (err) {
       message.channel.send('Whoops, a wild error appeared');
       console.error(err);
