@@ -7,12 +7,12 @@ const handler = async (message, args) => {
     return;
   }
 
-  const match = await openDota.match(matchId);
+  const matchOverview = await openDota.getMatchOverview(matchId);
 
-  if (!match)
+  if (!matchOverview)
     message.channel.send('Match not found');
   else
-    message.channel.send(openDota.matchOverview(match));
+    message.channel.send(matchOverview);
 }
 
 export default {

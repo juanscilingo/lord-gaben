@@ -2,8 +2,11 @@ import env from './env';
 
 const commandsPath = require("path").join(__dirname, "commands");
 const commands = require("fs").readdirSync(commandsPath).map(file => require("./commands/" + file).default);
+const tasksPath = require("path").join(__dirname, "tasks");
+const tasks = require("fs").readdirSync(tasksPath).map(file => require("./tasks/" + file).default);
 
 export default () => {
+  // COMMANDS
   global.client.on('message', message => {
     if (message.author.bot || !message.content.startsWith(env.PREFIX))
       return;
@@ -20,4 +23,10 @@ export default () => {
       console.error(err);
     }
   })
+
+  // PROCESSES
+  for (const task of tasks) {
+    task.handler();
+    setInterval(task.handler, task.interval);
+  }
 }

@@ -8,8 +8,10 @@ if (!env.DISCORD_TOKEN) {
 }
 
 global.client = new Discord.Client();
-global.client.on('ready', () => console.log(`Logged in as ${client.user.tag}`));
+global.client.on('ready', () => { 
+  console.log(`Logged in as ${client.user.tag}`)
+  boot();
+});
 
-boot();
 
 client.login(env.DISCORD_TOKEN);

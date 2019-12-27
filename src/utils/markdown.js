@@ -1,3 +1,3 @@
 export const codeBlock = content => {
-  return '```' + content + '```';
+  return '```cs\n' + content + '```';
 }

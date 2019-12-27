@@ -2,21 +2,28 @@ import Axios from "axios";
 import { table } from 'table';
 import moment from 'moment';
 import { codeBlock } from '../utils/markdown';
+import env from '../env';
 
 const OPEN_DOTA_API_URL = 'https://api.opendota.com/api';
 const axios = Axios.create({ baseURL: OPEN_DOTA_API_URL });
 
-export const match = async id => {
-  console.log('Fetching match id: ', id)
+export const getMatch = async matchId => {
+  console.log('Fetching match id: ', matchId)
   try {
-    const match = await axios.get(`matches/${id}`);
+    const match = await axios.get(`matches/${matchId}`);
     return match.data;
   } catch (error) {
     throw error;
   }
 }
 
-export const matchOverview = match => {
+export const recentMatches = async playerId => {
+  const matches = await axios.get(`players/${playerId}/recentMatches`);
+  return matches.data;
+}
+
+export const getMatchOverview = async matchId => {
+  const match = await getMatch(matchId);
   const headers = ['Player', 'Hero', 'Lane', 'LVL', 'K', 'D', 'A', 'LH/DN@10', 'EFF@10', 'GPM/XPM', 'HD', 'TD', 'Gold', 'Rank'];
   const data = match.players.map(player => [
     player.personaname || 'Anonymous',
