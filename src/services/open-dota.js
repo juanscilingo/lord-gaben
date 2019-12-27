@@ -7,12 +7,8 @@ const OPEN_DOTA_API_URL = 'https://api.opendota.com/api';
 const axios = Axios.create({ baseURL: OPEN_DOTA_API_URL });
 
 export const getMatch = async matchId => {
-  try {
-    const match = await axios.get(`matches/${matchId}`);
-    return match.data;
-  } catch (error) {
-    throw error;
-  }
+  const match = await axios.get(`matches/${matchId}`);
+  return match.data;
 }
 
 export const getRecentMatches = async playerId => {
@@ -20,18 +16,12 @@ export const getRecentMatches = async playerId => {
   return matches.data;
 }
 
-export const getMatchOverview = async matchId => {
-  const match = await getMatch(matchId);
-
-  if (!match.version)
-    return `Whoops, match ${match.match_id} is not parsed yet`
-
-  const headers = ['Player', 'Hero', 'Lane', 'LVL', 'K', 'D', 'A', 'LH/DN@10', 'EFF@10', 'GPM/XPM', 'HD', 'TD', 'Gold', 'Rank'];
+export const getMatchOverview = match => {
+  const headers = ['Player', 'Hero', 'Lane', 'K', 'D', 'A', 'LH/DN@10', 'EFF@10', 'GPM/XPM', 'HD', 'TD', 'Gold', 'Rank'];
   const data = match.players.map(player => [
-    player.personaname || 'Anonymous',
+    player.personaname ? player.personaname.replace(/[^\x00-\x7F]/g, '') : 'Anonymous',
     HEROES[player.hero_id],
     LANE[player.lane_role],
-    player.level, 
     player.kills, 
     player.deaths, 
     player.assists, 
@@ -55,7 +45,7 @@ export const getMatchOverview = async matchId => {
     },
     drawHorizontalLine: index => lineIndexes.includes(index),
     columns: {
-      0: { width: 22, truncate: 20 }
+      0: { truncate: 15 },
     },
   });
 

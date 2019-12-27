@@ -7,12 +7,16 @@ const handler = async (message, args) => {
     return;
   }
 
-  const matchOverview = await openDota.getMatchOverview(matchId);
+  const match = await openDota.getMatch(matchId);
 
-  if (!matchOverview)
-    message.channel.send('Match not found');
-  else
+  if (!match)
+    message.channel.send('Match not found')
+  else if (!match.version)
+    message.channel.send(`Match ${match.match_id} has not been parsed yet`)
+  else {
+    const matchOverview = openDota.getMatchOverview(match);
     message.channel.send(matchOverview);
+  }
 }
 
 export default {
