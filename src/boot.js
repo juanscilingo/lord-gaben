@@ -24,7 +24,7 @@ export default () => {
     }
   })
 
-  // PROCESSES
+  // TASKS
   for (const task of tasks) {
     task.handler();
     setInterval(task.handler, task.interval);
