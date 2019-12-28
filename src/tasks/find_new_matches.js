@@ -17,7 +17,7 @@ const handler = async () => {
           const matchData = await openDota.getMatch(match.match_id);
           if (matchData && matchData.version) {
             console.log('Parsing match: ', match.match_id)
-            const overview = await openDota.getMatchOverview(m);
+            const overview = await openDota.getMatchOverview(matchData);
             global.client.channels.get(env.MATCHES_CHANNEL_ID).send(overview);
             parsedMatches.push(match.match_id);
           }

@@ -45,7 +45,7 @@ export const getMatchOverview = match => {
     },
     drawHorizontalLine: index => lineIndexes.includes(index),
     columns: {
-      0: { truncate: 15 },
+      0: { truncate: 20 },
     },
   });
 
