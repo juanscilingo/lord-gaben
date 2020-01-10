@@ -1,5 +1,5 @@
 import env from '../env';
-import * as openDota from '../services/open-dota';
+import * as stratz from '../services/stratz';
 import moment from 'moment';
 
 const parsedMatches = [];
@@ -10,16 +10,18 @@ const handler = async () => {
   const fromDate = moment.utc().subtract(30, 'minutes');
 
   for (const player of env.DOTA_PLAYERS) {
-    for (const match of await openDota.getRecentMatches(player)) {
-      if (!parsedMatches.includes(match.match_id)) {
-        const endDate = moment.utc((match.start_time + match.duration) * 1000);
+    for (const match of await stratz.playerMatches(player)) {
+      if (!parsedMatches.includes(match.id)) {
+        const endDate = moment.utc(match.endDateTime * 1000);
         if (endDate > fromDate) {
-          const matchData = await openDota.getMatch(match.match_id);
-          if (matchData && matchData.version) {
-            console.log('Parsing match: ', match.match_id)
-            const overview = await openDota.getMatchOverview(matchData);
-            global.client.channels.get(env.MATCHES_CHANNEL_ID).send(overview);
-            parsedMatches.push(match.match_id);
+          const matchData = await stratz.match(match.id);
+          if (matchData && matchData.parsedDateTime) {
+            console.log('Parsing match: ', match.id)
+            const overview = await stratz.getMatchOverview(matchData);
+            const channel = global.client.channels.get(env.MATCHES_CHANNEL_ID);
+            channel.send(`<https://www.opendota.com/matches/${match.id}>   -   <https://stratz.com/en-us/match/${match.id}>`);
+            channel.send(overview);
+            parsedMatches.push(match.id);
           }
         }
       }
