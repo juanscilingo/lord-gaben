@@ -27,7 +27,7 @@ export default async () => {
   
   // COMMANDS
   console.log('Configuring commands...');
-  global.client.on('message', message => {
+  global.client.on('message', async message => {
     if (message.author.bot || !message.content.startsWith(env.PREFIX))
       return;
 
@@ -37,8 +37,16 @@ export default async () => {
     const issuedCommand = args.shift().toLowerCase();
 
     try {
-      commands.filter(command => command.matchers.some(matcher => matcher === issuedCommand)).forEach(command => command.handler(message, args));
+      const command = commands.find(command => command.matchers.some(matcher => matcher === issuedCommand));
+      if (command) {
+        await message.react('⏳');
+        await command.handler(message, args);
+        await message.clearReactions();
+        await message.react('✅');
+      }
     } catch (err) {
+      await message.clearReactions();
+      await message.react('❌');
       message.channel.send('Whoops, a wild error appeared');
       console.error(err);
     }
