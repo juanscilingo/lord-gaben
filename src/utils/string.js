@@ -1,0 +1,1 @@
+export const replaceAt = (value, text, index) => `${value.substr(0, index)}${text}${value.substr(index + text.length)}`;

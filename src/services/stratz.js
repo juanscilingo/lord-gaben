@@ -2,6 +2,7 @@ import Axios from "axios";
 import { table } from 'table';
 import moment from 'moment';
 import { codeBlock } from '../utils/markdown';
+import { replaceAt } from '../utils/string';
 
 const STRATZ_API_URL = 'https://api.stratz.com/api/v1';
 const axios = Axios.create({ baseURL: STRATZ_API_URL });
@@ -49,7 +50,7 @@ export const getMatchOverview = match => {
 
   const lineIndexes = [1, 6];
 
-  const playersTable = table([headers, ...data], {
+  let playersTable = table([headers, ...data], {
     border: {
       bodyLeft: '',
       bodyRight: '',
@@ -62,8 +63,13 @@ export const getMatchOverview = match => {
     },
   });
 
+  const tableRows = playersTable.split('\n');
+  tableRows[1] = replaceAt(tableRows[1], ` RADIANT${match.didRadiantWin ? ' (WINNER)' : ''} `, 5);
+  tableRows[7] = replaceAt(tableRows[7], ` DIRE${!match.didRadiantWin ? ' (WINNER)' : ''} `, 5);
+  playersTable = tableRows.join('\n');
+
   const duration = moment.utc(match.durationSeconds * 1000).format(match.durationSeconds > 3600 ? 'hh:mm:ss' : 'mm:ss');
-  const description = `${match.stats.radiantKills.reduce((acc, rk) => acc + rk, 0)} - ${match.stats.direKills.reduce((acc, dk) => acc + dk, 0)} in ${duration} - Game Mode: ${GAME_MODE[match.gameMode]} - Lobby: ${LOBBY_TYPE[match.lobbyType]} - Winner: ${match.didRadiantWin ? 'Radiant' : 'Dire'}`
+  const description = `${match.stats.radiantKills.reduce((acc, rk) => acc + rk, 0)} - ${match.stats.direKills.reduce((acc, dk) => acc + dk, 0)} in ${duration} - Game Mode: ${GAME_MODE[match.gameMode]} - Lobby: ${LOBBY_TYPE[match.lobbyType]} - Winner: ${match.didRadiantWin ? 'Radiant' : 'Dire'} - Match ID: ${match.id}`
   
   return codeBlock(`${description}\n\n${playersTable}`);
 }
