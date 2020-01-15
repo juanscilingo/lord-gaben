@@ -3,6 +3,8 @@ import { table } from 'table';
 import moment from 'moment';
 import { codeBlock } from '../utils/markdown';
 import { replaceAt } from '../utils/string';
+import { RichEmbed } from 'discord.js';
+import * as colors from '../constants/colors';
 
 const STRATZ_API_URL = 'https://api.stratz.com/api/v1';
 const axios = Axios.create({ baseURL: STRATZ_API_URL });
@@ -17,10 +19,42 @@ export const match = async id => {
   }
 }
 
-export const playerMatches = async playerId => {
+export const playerMatches = async (playerId, take) => {
   console.log('Fetching matches for player: ', playerId);
-  const response = await axios.get(`/player/${playerId}/matches`);
+  const response = await axios.get(`/player/${playerId}/matches`, { params: { take }});
   return response.data;
+}
+
+export const getPlayer = async playerId => {
+  const response = await axios.get(`/player/${playerId}`);
+  return response.data;
+}
+
+export const recentMatchesSummary = async playerId => {
+  const player = await getPlayer(playerId);
+
+  if (player.steamAccount.isAnonymous)
+    return `Player \`${playerId}\` could not be found or is anonymous`;
+
+  const matches = await playerMatches(playerId, 20);
+  const winCount = matches.filter(m => playerWon(m, playerId)).length;
+  const lostCount = matches.length - winCount;
+  const winRate = (winCount / matches.length) * 100;
+
+  const summaryEmbed = new RichEmbed();
+  summaryEmbed.setColor(winRate > 50 ? colors.GREEN : winRate < 50 ? colors.RED : colors.BLUE)
+	            .setAuthor(player.steamAccount.name, getPlayerAvatar(player), `https://www.opendota.com/players/${playerId}`)
+              .setThumbnail(getPlayerAvatar(player))
+              .setTitle(`Recent Matches Summary`)
+              .setURL(`https://www.opendota.com/players/${playerId}`)
+              .addField('Won', winCount, true)
+              .addField('Lost', lostCount, true)
+              .addField('Winrate', `${winRate}%`, true);
+
+  const heroes = Array.from(new Set(matches.map(m => HEROES[getPlayerFromMatch(m, playerId).heroId])).values());
+  summaryEmbed.addField('Heroes', heroes.join(', '))
+
+  return summaryEmbed;
 }
 
 export const getMatchOverview = match => {
@@ -74,6 +108,20 @@ export const getMatchOverview = match => {
   return codeBlock(`${description}\n\n${playersTable}`);
 }
 
+// UTILS
+const getPlayerFromMatch = (match, playerId) =>
+  match.players.find(p => p.steamId && p.steamId == playerId)
+
+const playerWon = (match, playerId) => {
+  const isRadiant = getPlayerFromMatch(match, playerId).isRadiant;
+  return (isRadiant && match.didRadiantWin) || (!isRadiant && !match.didRadiantWin);
+}
+
+const getPlayerAvatar = player => {
+  const URL = 'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars';
+  const FALLBACK_URL = 'http://iskin.tooliphone.net/themes/6125/4055/preview-256.png';
+  return player.steamAccount && player.steamAccount.avatar ?`${URL}/${player.steamAccount.avatar}` : FALLBACK_URL;
+}
 
 // CONSTANTS
 export const SKILL = {

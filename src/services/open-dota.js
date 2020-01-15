@@ -2,9 +2,16 @@ import Axios from "axios";
 import { table } from 'table';
 import moment from 'moment';
 import { codeBlock } from '../utils/markdown';
+import { RichEmbed } from 'discord.js';
+import * as colors from '../constants/colors';
 
 const OPEN_DOTA_API_URL = 'https://api.opendota.com/api';
 const axios = Axios.create({ baseURL: OPEN_DOTA_API_URL });
+
+export const getPlayer = async playerId => {
+  const match = await axios.get(`players/${playerId}`);
+  return match.data;
+}
 
 export const getMatch = async matchId => {
   const match = await axios.get(`matches/${matchId}`);
@@ -14,6 +21,28 @@ export const getMatch = async matchId => {
 export const getRecentMatches = async playerId => {
   const matches = await axios.get(`players/${playerId}/recentMatches`);
   return matches.data;
+}
+
+export const getRecentMatchesSummary = async playerId => {
+  const player = await getPlayer(playerId);
+  const matches = await getRecentMatches(playerId);
+  const winCount = matches.filter(m => playerWon(m)).length;
+  const lostCount = matches.length - winCount;
+  const winRate = (winCount / matches.length) * 100;
+
+  const summaryEmbed = new RichEmbed();
+  summaryEmbed.setColor(winRate > 50 ? colors.GREEN : winRate < 50 ? colors.RED : colors.BLUE)
+              .setThumbnail('http://iskin.tooliphone.net/themes/6125/4055/preview-256.png')
+              .setTitle(`Recent Matches Summary for ${player.profile.personaname}`)
+              .setURL(`https://www.opendota.com/players/${playerId}`)
+              .addField('Won', winCount, true)
+              .addField('Lost', lostCount, true)
+              .addField('Winrate', `${winRate}%`, true);
+
+  const heroes = Array.from(new Set(matches.map(m => HEROES[m.hero_id])).values());
+  summaryEmbed.addField('Heroes', heroes.join(', '))
+
+  return summaryEmbed;
 }
 
 export const getMatchOverview = match => {
@@ -54,6 +83,9 @@ export const getMatchOverview = match => {
   
   return codeBlock(`${description}\n\n${playersTable}`);
 }
+
+// UTILS
+const playerWon = m => (m.player_slot < 6 && m.radiant_win) || (m.player_slot > 5 && !m.radiant_win);
 
 // CONSTANTS
 export const SKILL = {

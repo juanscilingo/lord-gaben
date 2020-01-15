@@ -12,6 +12,6 @@ const handler = (msg, args) => {
 }
 
 export default {
-  matchers: ['response', 'r'],
+  matchers: ['response'],
   handler
 }

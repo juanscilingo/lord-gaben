@@ -5,5 +5,5 @@ export const getUsers = async () => {
     TableName: env.USERS_TABLE
   }).promise()
 
-  return result.Items;
+  return result.Items.map(p => ({...p, aliases: p.aliases.split(',')}));
 }

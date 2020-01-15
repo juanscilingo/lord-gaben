@@ -1,0 +1,2 @@
+export const getUserByNameOrAlias = value => global.users.find(u => u.name.toLowerCase() === value.toLowerCase() || u.aliases.includes(value.toLowerCase()));
+export const getUserById = id => global.users.find(u => u.id == id);
