@@ -88,49 +88,45 @@ export const recentMatchesSummary = async playerId => {
 }
 
 export const recentAll = async () => {
-  const embed = new RichEmbed();
-  embed.setColor(colors.BLUE)
-       .setThumbnail('http://iskin.tooliphone.net/themes/6125/4055/preview-256.png')
-       .setTitle(`Recent Matches Summary`);
+  const playerIds = global.users.map(u => u.dota_profile_id);
 
-  /* GraphQL */
-  const PLAYERS_QUERY = `
-    query{
-      players (steamIds: [${global.users.slice(0, 2).map(u => u.dota_profile_id)}]) {
+  const QUERY = `
+    query {
+      players (steamIds: [${playerIds}]) {
         steamAccount {
           id,
           name,
           avatar
         }
       }
+      ${playerIds.map(id => `
+        p${id}: playerMatches(steamAccountId: ${id}, take: 20) {
+          id,
+          didRadiantWin,
+          players{
+            steamId,
+            isRadiant
+          }
+        }
+      `).join('')}
     }
   `
+  const data = (await Axios.post(STRATZ_GRAPHQL_URL, { query: QUERY })).data.data;
+  
+  const embed = new RichEmbed();
+  embed.setColor(colors.BLUE)
+       .setThumbnail('http://iskin.tooliphone.net/themes/6125/4055/preview-256.png')
+       .setTitle(`Recent Matches Summary`);
 
-  const MATCHES_QUERY = `
-    fragment matchFields on MatchType {
-      id
-    }
-    query p1 {
-      t1: playerMatches(steamAccountId: 143943831, take: 20) {
-        ...matchFields
-      },
-    },
-    query p2 {
-      t2: playerMatches(steamAccountId: 78108573, take: 20) {
-        ...matchFields
-      },
-    }
-  `
+  for (const player of data.players) {
+    const matches = data[`p${player.steamAccount.id}`];
+    const winCount = matches.filter(match => playerWon(match, player.steamAccount.id)).length;
+    const winRate = winCount / matches.length * 100;
 
-  const players = (await Axios.post(STRATZ_GRAPHQL_URL, { query: MATCHES_QUERY })).data;
-  console.log(players);
+    embed.addField(player.steamAccount.name, `${winRate.toFixed()}%`, true);
+  }
 
-  // const players = await Promise.all(global.users.slice(0, 2).map(u => playerMatches(u.dota_profile_id, 20)));
-
-  // console.log(players);
-  // for (const user of global.users) {
-
-  // }
+  return embed;
 }
 
 export const getMatchOverview = match => {
