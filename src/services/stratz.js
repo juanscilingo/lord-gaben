@@ -7,6 +7,7 @@ import { RichEmbed } from 'discord.js';
 import * as colors from '../constants/colors';
 
 const STRATZ_API_URL = 'https://api.stratz.com/api/v1';
+const STRATZ_GRAPHQL_URL = 'https://api.stratz.com/GraphQL';
 const axios = Axios.create({ baseURL: STRATZ_API_URL });
 
 export const match = async id => {
@@ -26,6 +27,7 @@ export const playerMatches = async (playerId, take) => {
 }
 
 export const getPlayer = async playerId => {
+  console.log('Fetching player: ', playerId);
   const response = await axios.get(`/player/${playerId}`);
   return response.data;
 }
@@ -37,7 +39,32 @@ export const recentMatchesSummary = async playerId => {
     return `Player \`${playerId}\` could not be found or is anonymous`;
 
   const matches = await playerMatches(playerId, 20);
-  const winCount = matches.filter(m => playerWon(m, playerId)).length;
+
+  const heroes = [];
+  let winCount = 0;
+
+  for (const match of matches) {
+    const won = playerWon(match, playerId);
+    const matchPlayer = getPlayerFromMatch(match, playerId);
+    let hero = heroes.find(h => matchPlayer.heroId === h.heroId);
+    if (!hero) {
+      hero = {
+        heroId: matchPlayer.heroId,
+        name: HEROES[matchPlayer.heroId],
+        winCount: 0,
+        totalCount: 0
+      }
+      heroes.push(hero);
+    }
+
+    if (won) {
+      winCount++;
+      hero.winCount++;
+    }
+
+    hero.totalCount++;
+  }
+
   const lostCount = matches.length - winCount;
   const winRate = (winCount / matches.length) * 100;
 
@@ -49,12 +76,61 @@ export const recentMatchesSummary = async playerId => {
               .setURL(`https://www.opendota.com/players/${playerId}`)
               .addField('Won', winCount, true)
               .addField('Lost', lostCount, true)
-              .addField('Winrate', `${winRate}%`, true);
+              .addField('Winrate', `${winRate.toFixed()}%`, true)
+              .addBlankField();
 
-  const heroes = Array.from(new Set(matches.map(m => HEROES[getPlayerFromMatch(m, playerId).heroId])).values());
-  summaryEmbed.addField('Heroes', heroes.join(', '))
+  for (const hero of heroes) {
+    const winRate = hero.winCount/hero.totalCount * 100;
+    summaryEmbed.addField(hero.name, `${hero.winCount}/${hero.totalCount} (${winRate.toFixed()}%)`, true)
+  }
 
   return summaryEmbed;
+}
+
+export const recentAll = async () => {
+  const embed = new RichEmbed();
+  embed.setColor(colors.BLUE)
+       .setThumbnail('http://iskin.tooliphone.net/themes/6125/4055/preview-256.png')
+       .setTitle(`Recent Matches Summary`);
+
+  /* GraphQL */
+  const PLAYERS_QUERY = `
+    query{
+      players (steamIds: [${global.users.slice(0, 2).map(u => u.dota_profile_id)}]) {
+        steamAccount {
+          id,
+          name,
+          avatar
+        }
+      }
+    }
+  `
+
+  const MATCHES_QUERY = `
+    fragment matchFields on MatchType {
+      id
+    }
+    query p1 {
+      t1: playerMatches(steamAccountId: 143943831, take: 20) {
+        ...matchFields
+      },
+    },
+    query p2 {
+      t2: playerMatches(steamAccountId: 78108573, take: 20) {
+        ...matchFields
+      },
+    }
+  `
+
+  const players = (await Axios.post(STRATZ_GRAPHQL_URL, { query: MATCHES_QUERY })).data;
+  console.log(players);
+
+  // const players = await Promise.all(global.users.slice(0, 2).map(u => playerMatches(u.dota_profile_id, 20)));
+
+  // console.log(players);
+  // for (const user of global.users) {
+
+  // }
 }
 
 export const getMatchOverview = match => {
