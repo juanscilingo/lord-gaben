@@ -5,6 +5,7 @@ import { codeBlock } from '../utils/markdown';
 import { replaceAt } from '../utils/string';
 import { RichEmbed } from 'discord.js';
 import * as colors from '../constants/colors';
+import * as embedUtils from '../utils/embeds';
 
 const STRATZ_API_URL = 'https://api.stratz.com/api/v1';
 const STRATZ_GRAPHQL_URL = 'https://api.stratz.com/GraphQL';
@@ -84,6 +85,8 @@ export const recentMatchesSummary = async playerId => {
     summaryEmbed.addField(hero.name, `${hero.winCount}/${hero.totalCount} (${winRate.toFixed()}%)`, true)
   }
 
+  embedUtils.fillWithBlankFields(summaryEmbed, heroes.length);
+
   return summaryEmbed;
 }
 
@@ -118,13 +121,22 @@ export const recentAll = async () => {
        .setThumbnail('http://iskin.tooliphone.net/themes/6125/4055/preview-256.png')
        .setTitle(`Recent Matches Summary`);
 
+  let players = [];
   for (const player of data.players) {
     const matches = data[`p${player.steamAccount.id}`];
     const winCount = matches.filter(match => playerWon(match, player.steamAccount.id)).length;
     const winRate = winCount / matches.length * 100;
 
-    embed.addField(player.steamAccount.name, `${winRate.toFixed()}%`, true);
+    players.push({ 
+      name: player.steamAccount.name,
+      winRate,
+    })
   }
+
+  for (const player of players.sort((p1, p2) => p2.winRate - p1.winRate))
+    embed.addField(player.name, `${player.winRate.toFixed()}%`, true);
+
+  embedUtils.fillWithBlankFields(embed, players.length);
 
   return embed;
 }
