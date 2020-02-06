@@ -103,7 +103,7 @@ export const recentAll = async () => {
         }
       }
       ${playerIds.map(id => `
-        p${id}: playerMatches(steamAccountId: ${id}, take: 20) {
+        p${id}: playerMatches(request: { steamAccountId: ${id}, take: 20, skip: 0 }) {
           id,
           didRadiantWin,
           players{
@@ -114,7 +114,14 @@ export const recentAll = async () => {
       `).join('')}
     }
   `
-  const data = (await Axios.post(STRATZ_GRAPHQL_URL, { query: QUERY })).data.data;
+
+  const resp = await Axios.post(STRATZ_GRAPHQL_URL, { query: QUERY });
+
+  console.log(QUERY);
+  console.log(resp);
+  console.log(resp.data.errors)
+
+  const data = resp.data.data;
   
   const embed = new RichEmbed();
   embed.setColor(colors.BLUE)
