@@ -8,7 +8,7 @@ import * as colors from '../constants/colors';
 import * as embedUtils from '../utils/embeds';
 
 const STRATZ_API_URL = 'https://api.stratz.com/api/v1';
-const STRATZ_GRAPHQL_URL = 'https://api.stratz.com/GraphQL';
+const STRATZ_GRAPHQL_URL = 'https://api.stratz.com/graphql';
 const axios = Axios.create({ baseURL: STRATZ_API_URL });
 
 export const match = async id => {
@@ -95,7 +95,7 @@ export const recentAll = async () => {
 
   const QUERY = `
     query {
-      players (steamIds: [${playerIds}]) {
+      players (steamAccountIds: [${playerIds}]) {
         steamAccount {
           id,
           name,
@@ -107,7 +107,7 @@ export const recentAll = async () => {
           id,
           didRadiantWin,
           players{
-            steamId,
+            steamAccountId,
             isRadiant
           }
         }
@@ -116,11 +116,6 @@ export const recentAll = async () => {
   `
 
   const resp = await Axios.post(STRATZ_GRAPHQL_URL, { query: QUERY });
-
-  console.log(QUERY);
-  console.log(resp);
-  console.log(resp.data.errors)
-
   const data = resp.data.data;
   
   const embed = new RichEmbed();
@@ -201,7 +196,7 @@ export const getMatchOverview = match => {
 
 // UTILS
 const getPlayerFromMatch = (match, playerId) =>
-  match.players.find(p => p.steamId && p.steamId == playerId)
+  match.players.find(p => p.steamAccountId && p.steamAccountId == playerId)
 
 const playerWon = (match, playerId) => {
   const isRadiant = getPlayerFromMatch(match, playerId).isRadiant;
