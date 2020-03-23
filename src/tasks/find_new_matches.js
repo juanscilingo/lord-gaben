@@ -17,7 +17,7 @@ const handler = async () => {
           const matchData = await stratz.match(match.id);
           if (matchData && matchData.parsedDateTime) {
             console.log('Parsing match: ', match.id)
-            const overview = await stratz.getMatchOverview(matchData);
+            const overview = stratz.getMatchOverview(matchData);
             const channel = global.client.channels.get(env.MATCHES_CHANNEL_ID);
             channel.send(`<https://www.opendota.com/matches/${match.id}>   -   <https://stratz.com/en-us/match/${match.id}>`);
             channel.send(overview);
@@ -30,6 +30,6 @@ const handler = async () => {
 }
 
 export default {
-  interval: 1000 * 60,
+  interval: 1000 * 60 * 5,
   handler
 }
