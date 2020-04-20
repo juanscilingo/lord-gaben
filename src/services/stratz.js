@@ -146,8 +146,8 @@ export const recentAll = async () => {
 export const getMatchOverview = match => {
   const headers = ['  Player', 'Hero', 'Lane', 'K', 'D', 'A', 'LH/DN', 'GPM/XPM', 'NW', 'HD', 'TD', 'Imp', 'AW', 'Rank'];
   const data = match.players.map(player => {
-    const denies = player.stats.denyPerMinute.slice(0, 10).reduce((acc, lh) => acc + lh, 0);
-    const lastHits = player.stats.lastHitPerMinute.slice(0, 10).reduce((acc, lh) => acc + lh, 0) - denies;
+    const denies = player.stats.denyPerMinute.slice(0, 10).reduce((acc, dn) => acc + dn, 0);
+    const lastHits = player.stats.lastHitPerMinute.slice(0, 10).reduce((acc, lh) => acc + lh, 0);
     return [
       player.steamAccount ? player.steamAccount.name.replace(/[^\x00-\x7F]/g, '') : 'Anonymous',
       HEROES[player.heroId],
