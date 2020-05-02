@@ -33,6 +33,70 @@ export const getPlayer = async playerId => {
   return response.data;
 }
 
+export const getRecentMatches = async playerIds => {
+  const query = `
+    query {
+      players(steamAccountIds: [${playerIds}]) {
+        matches(request: { take: 20, skip: 0 }) {
+          id,
+          didRadiantWin,
+          gameMode,
+          lobbyType
+          durationSeconds,
+          endDateTime,
+          stats {
+            radiantKills,
+            direKills
+          },
+          players {
+            steamAccountId,
+            steamAccount {
+              id,
+              name,
+              avatar,
+              seasonRank
+            }
+            partyId,
+            heroId,
+            lane,
+            kills,
+            deaths,
+            assists,
+            goldPerMinute,
+            experiencePerMinute,
+            networth,
+            heroDamage,
+            towerDamage,
+            imp,
+            award,
+            isRadiant,
+            stats {
+              deniesPerMinute,
+              lastHitsPerMinute
+            }
+          }
+        }
+      }
+    }
+  `
+
+  const resp = await Axios.post(STRATZ_GRAPHQL_URL, { query });
+  const data = resp.data.data;
+
+  const matches = [];
+
+  for (const player of data.players) {
+    for (const match of player.matches) {
+      if (matches.some(m => m.id === match.id))
+        return;
+
+      matches.push(match);
+    }
+  }
+
+  return matches;
+}
+
 export const recentMatchesSummary = async playerId => {
   const player = await getPlayer(playerId);
 
@@ -101,17 +165,15 @@ export const recentAll = async () => {
           name,
           avatar
         }
-      }
-      ${playerIds.map(id => `
-        p${id}: playerMatches(request: { steamAccountId: ${id}, take: 20, skip: 0 }) {
+        matches(request: { take: 20, skip: 0 }) {
           id,
           didRadiantWin,
-          players{
+          players {
             steamAccountId,
             isRadiant
           }
         }
-      `).join('')}
+      }
     }
   `
 
@@ -125,7 +187,7 @@ export const recentAll = async () => {
 
   let players = [];
   for (const player of data.players) {
-    const matches = data[`p${player.steamAccount.id}`];
+    const matches = player.matches;
     const winCount = matches.filter(match => playerWon(match, player.steamAccount.id)).length;
     const winRate = winCount / matches.length * 100;
 
