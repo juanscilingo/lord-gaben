@@ -55,8 +55,15 @@ export default async () => {
   // TASKS
   console.log('Configuring tasks...');
   for (const task of tasks) {
-    task.handler();
-    setInterval(task.handler, task.interval);
+    const runTask = () => {
+      try {
+        task.handler();
+      } catch (err) {
+        console.error('Error when running task: ', err);
+      }
+    }
+    runTask();
+    setInterval(runTask, task.interval);
   }
 
   console.log('Finished booting');
