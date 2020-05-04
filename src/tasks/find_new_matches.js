@@ -14,10 +14,9 @@ const handler = async () => {
       if (!parsedMatches.includes(match.id)) {
         const endDate = moment.utc(match.endDateTime * 1000);
         if (endDate > fromDate) {
-          const matchData = await stratz.match(match.id);
-          if (matchData && matchData.parsedDateTime) {
+          if (match.parsedDateTime) {
             console.log('Parsing match: ', match.id)
-            const overview = stratz.getMatchOverview(matchData);
+            const overview = stratz.getMatchOverview(match);
             const channel = global.client.channels.get(env.MATCHES_CHANNEL_ID);
             channel.send(`<https://www.opendota.com/matches/${match.id}>   -   <https://stratz.com/en-us/match/${match.id}>`);
             channel.send(overview);

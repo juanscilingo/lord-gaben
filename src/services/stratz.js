@@ -14,8 +14,53 @@ const axios = Axios.create({ baseURL: STRATZ_API_URL });
 export const match = async id => {
   console.log('Fetching match id: ', id)
   try {
-    const response = await axios.get(`/match/${id}/breakdown`);
-    return response.data;
+    const query = `
+      query {
+        match(id:${id}) {
+          id,
+          didRadiantWin,
+          gameMode,
+          lobbyType
+          durationSeconds,
+          endDateTime,
+          parsedDateTime,
+          
+          stats {
+            radiantKills,
+            direKills
+          },
+          players {
+            steamAccountId,
+            steamAccount {
+              id,
+              name,
+              avatar,
+              seasonRank
+            }
+            partyId,
+            heroId,
+            lane,
+            kills,
+            deaths,
+            assists,
+            goldPerMinute,
+            experiencePerMinute,
+            networth,
+            heroDamage,
+            towerDamage,
+            imp,
+            award,
+            isRadiant,
+            stats {
+              deniesPerMinute,
+              lastHitsPerMinute
+            }
+          }
+        }
+      }
+    `
+    const resp = await Axios.post(STRATZ_GRAPHQL_URL, { query });
+    return resp.data.data.match;
   } catch (error) {
     throw error;
   }
@@ -37,13 +82,14 @@ export const getRecentMatches = async playerIds => {
   const query = `
     query {
       players(steamAccountIds: [${playerIds}]) {
-        matches(request: { take: 20, skip: 0 }) {
+        matches(request: { take: 5, skip: 0 }) {
           id,
           didRadiantWin,
           gameMode,
           lobbyType
           durationSeconds,
           endDateTime,
+          parsedDateTime,
           stats {
             radiantKills,
             direKills
@@ -80,19 +126,16 @@ export const getRecentMatches = async playerIds => {
     }
   `
 
+
   const resp = await Axios.post(STRATZ_GRAPHQL_URL, { query });
   const data = resp.data.data;
 
   const matches = [];
 
-  for (const player of data.players) {
-    for (const match of player.matches) {
-      if (matches.some(m => m.id === match.id))
-        return;
-
-      matches.push(match);
-    }
-  }
+  for (const player of data.players)
+    for (const match of player.matches)
+      if (!matches.some(m => m.id === match.id))
+        matches.push(match);
 
   return matches;
 }
@@ -208,15 +251,15 @@ export const recentAll = async () => {
 export const getMatchOverview = match => {
   const headers = ['  Player', 'Hero', 'Lane', 'K', 'D', 'A', 'LH/DN', 'GPM/XPM', 'NW', 'HD', 'TD', 'Imp', 'AW', 'Rank'];
   const data = match.players.map(player => {
-    const denies = player.stats.denyPerMinute.slice(0, 10).reduce((acc, dn) => acc + dn, 0);
-    const lastHits = player.stats.lastHitPerMinute.slice(0, 10).reduce((acc, lh) => acc + lh, 0);
+    const denies = player.stats.deniesPerMinute.slice(0, 10).reduce((acc, dn) => acc + dn, 0);
+    const lastHits = player.stats.lastHitsPerMinute.slice(0, 10).reduce((acc, lh) => acc + lh, 0);
     return [
       player.steamAccount ? player.steamAccount.name.replace(/[^\x00-\x7F]/g, '') : 'Anonymous',
       HEROES[player.heroId],
       LANE[player.lane],
-      player.numKills, 
-      player.numDeaths, 
-      player.numAssists, 
+      player.kills, 
+      player.deaths, 
+      player.assists, 
       `${lastHits}/${denies}`,
       `${player.goldPerMinute}/${player.experiencePerMinute}`,
       player.networth,
